@@ -33,11 +33,10 @@ const Index = () => {
   const { toast } = useToast();
 
   const statuses = [
-    "Analyzing your requirements...",
-    "Designing the layout...",
-    "Adding interactive features...",
-    "Applying modern styling...",
-    "Almost ready...",
+    "🤖 Analyzing your requirements...",
+    "🎨 Generating HTML structure...",
+    "✨ Adding styles and animations...",
+    "🚀 Finalizing your website...",
   ];
 
   const handleGenerate = async () => {
@@ -60,98 +59,98 @@ const Index = () => {
     const statusInterval = setInterval(() => {
       statusIndex = (statusIndex + 1) % statuses.length;
       setStatus(statuses[statusIndex]);
-    }, 6000);
+    }, 3000);
 
     const progressInterval = setInterval(() => {
       setProgress((p) => Math.min(p + 2, 95));
     }, 600);
 
-    setTimeout(() => {
+    try {
+      const prompt = `You are an expert web developer. Generate a complete, production-ready, single-file HTML website based on this description:
+
+${input}
+
+REQUIREMENTS:
+- Complete HTML5 document starting with <!DOCTYPE html>
+- Use Tailwind CSS CDN: <script src="https://cdn.tailwindcss.com"></script>
+- Inline all CSS in <style> tags if needed beyond Tailwind
+- Inline all JavaScript in <script> tags
+- Mobile-first responsive design
+- Modern, professional design with smooth animations
+- Use placeholder images from unsplash.com (https://source.unsplash.com/random/800x600?{relevant-keyword})
+- Include realistic placeholder text and content
+- Professional color scheme matching the description
+- Proper semantic HTML5 tags
+- Accessibility features (alt tags, ARIA labels)
+
+Return ONLY the complete HTML code. No explanations, no markdown code blocks, no \`\`\`html - just the raw HTML starting with <!DOCTYPE html>`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert web developer who creates beautiful, modern, production-ready websites. You always return clean HTML code without any markdown formatting.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 4000
+        })
+      });
+
       clearInterval(statusInterval);
       clearInterval(progressInterval);
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Too many requests. Please wait a minute.');
+        }
+        throw new Error('Generation failed. Please try again.');
+      }
+
+      const data = await response.json();
+      let htmlCode = data.choices[0].message.content;
+
+      // Remove markdown code blocks if present
+      htmlCode = htmlCode.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
+
+      // Validate it's HTML
+      if (!htmlCode.includes('<!DOCTYPE html>') && !htmlCode.includes('<html')) {
+        throw new Error('Invalid HTML generated');
+      }
+
       setProgress(100);
-
-      const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Generated Website</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in {
-      animation: fadeIn 0.6s ease-out;
-    }
-  </style>
-</head>
-<body class="bg-gradient-to-br from-purple-50 via-white to-indigo-50 min-h-screen">
-  <div class="container mx-auto px-6 py-20">
-    <div class="text-center animate-fade-in">
-      <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-full mb-8 shadow-2xl">
-        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-        </svg>
-      </div>
-      <h1 class="text-6xl font-bold text-gray-900 mb-6 tracking-tight">Your Website is Live! 🎉</h1>
-      <p class="text-xl text-gray-600 mb-4 max-w-2xl mx-auto leading-relaxed">
-        This is a demo preview. Real AI generation with Claude Sonnet 4 coming soon!
-      </p>
-      <div class="bg-white rounded-3xl shadow-2xl p-12 max-w-4xl mx-auto mt-12 border border-purple-100">
-        <div class="flex items-start gap-4 mb-6">
-          <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
-            </svg>
-          </div>
-          <div class="text-left flex-1">
-            <h2 class="text-2xl font-bold text-gray-900 mb-3">Generated from your description:</h2>
-            <p class="text-gray-700 leading-relaxed text-lg">
-              "${input.substring(0, 300)}${input.length > 300 ? "..." : ""}"
-            </p>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-          <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 border border-purple-200">
-            <div class="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center mb-4">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-              </svg>
-            </div>
-            <h3 class="font-bold text-gray-900 mb-2">Fast Generation</h3>
-            <p class="text-gray-600 text-sm">Built in seconds with AI</p>
-          </div>
-          <div class="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-6 border border-violet-200">
-            <div class="w-12 h-12 bg-violet-600 rounded-xl flex items-center justify-center mb-4">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-              </svg>
-            </div>
-            <h3 class="font-bold text-gray-900 mb-2">Fully Responsive</h3>
-            <p class="text-gray-600 text-sm">Works on all devices</p>
-          </div>
-          <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl p-6 border border-indigo-200">
-            <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center mb-4">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-              </svg>
-            </div>
-            <h3 class="font-bold text-gray-900 mb-2">Clean Code</h3>
-            <p class="text-gray-600 text-sm">Production-ready HTML</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
-
-      setGeneratedCode(html);
+      setGeneratedCode(htmlCode);
       setIsGenerating(false);
-    }, 30000);
+
+      toast({
+        title: "Success! 🎉",
+        description: "Your website has been generated successfully",
+      });
+    } catch (error) {
+      clearInterval(statusInterval);
+      clearInterval(progressInterval);
+      setIsGenerating(false);
+      setProgress(0);
+
+      console.error('Generation error:', error);
+
+      toast({
+        title: "Generation failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDownload = () => {
