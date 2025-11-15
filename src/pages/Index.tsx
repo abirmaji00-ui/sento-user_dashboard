@@ -77,49 +77,47 @@ REQUIREMENTS:
 - Inline all JavaScript in <script> tags
 - Mobile-first responsive design
 - Modern, professional design with smooth animations
-- Use placeholder images from unsplash.com (https://source.unsplash.com/random/800x600?{relevant-keyword})
+- Use placeholder images from https://source.unsplash.com/random/800x600?{relevant-keyword}
 - Include realistic placeholder text and content
 - Professional color scheme matching the description
 - Proper semantic HTML5 tags
 - Accessibility features (alt tags, ARIA labels)
 
-Return ONLY the complete HTML code. No explanations, no markdown code blocks, no \`\`\`html - just the raw HTML starting with <!DOCTYPE html>`;
+Return ONLY the complete HTML code. No explanations, no markdown, no code blocks - just the raw HTML starting with <!DOCTYPE html>`;
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert web developer who creates beautiful, modern, production-ready websites. You always return clean HTML code without any markdown formatting.'
-            },
-            {
-              role: 'user',
-              content: prompt
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: prompt
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 4000,
             }
-          ],
-          temperature: 0.7,
-          max_tokens: 4000
-        })
-      });
+          })
+        }
+      );
 
       clearInterval(statusInterval);
       clearInterval(progressInterval);
 
       if (!response.ok) {
         if (response.status === 429) {
-          throw new Error('Too many requests. Please wait a minute.');
+          throw new Error('Too many requests. Please wait a moment.');
         }
         throw new Error('Generation failed. Please try again.');
       }
 
       const data = await response.json();
-      let htmlCode = data.choices[0].message.content;
+      let htmlCode = data.candidates[0].content.parts[0].text;
 
       // Remove markdown code blocks if present
       htmlCode = htmlCode.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
