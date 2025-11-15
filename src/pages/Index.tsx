@@ -66,7 +66,7 @@ const Index = () => {
     }, 600);
 
     try {
-      const prompt = `You are an expert web developer. Generate a complete, production-ready, single-file HTML website based on this description:
+      const prompt = `Generate a complete, production-ready, single-file HTML website based on this description:
 
 ${input}
 
@@ -85,26 +85,28 @@ REQUIREMENTS:
 
 Return ONLY the complete HTML code. No explanations, no markdown, no code blocks - just the raw HTML starting with <!DOCTYPE html>`;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: prompt
-              }]
-            }],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 4000,
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert web developer who creates beautiful, modern, production-ready websites. You always return clean HTML code without any markdown formatting.'
+            },
+            {
+              role: 'user',
+              content: prompt
             }
-          })
-        }
-      );
+          ],
+          temperature: 0.7,
+          max_tokens: 4000
+        })
+      });
 
       clearInterval(statusInterval);
       clearInterval(progressInterval);
@@ -117,7 +119,7 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
       }
 
       const data = await response.json();
-      let htmlCode = data.candidates[0].content.parts[0].text;
+      let htmlCode = data.choices[0].message.content;
 
       // Remove markdown code blocks if present
       htmlCode = htmlCode.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
