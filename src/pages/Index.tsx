@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -20,6 +21,7 @@ import {
   User,
   Share2,
   Play,
+  FolderOpen,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -29,10 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SavedWebsite, STORAGE_KEY, MAX_WEBSITES } from "@/types/website";
 
 type ViewMode = "desktop" | "tablet" | "mobile";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
@@ -42,12 +47,52 @@ const Index = () => {
   const [industry, setIndustry] = useState("");
   const { toast } = useToast();
 
+  // Load from navigation state if regenerating
+  useEffect(() => {
+    if (location.state?.description) {
+      setInput(location.state.description);
+      if (location.state.industry) {
+        setIndustry(location.state.industry);
+      }
+    }
+  }, [location.state]);
+
   const statuses = [
     "🤖 Analyzing your requirements...",
     "🎨 Generating HTML structure...",
     "✨ Adding styles and animations...",
     "🚀 Finalizing your website...",
   ];
+
+  const saveWebsite = (htmlCode: string) => {
+    try {
+      const websites: SavedWebsite[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      
+      // Extract title from description or use default
+      const name = input.split('\n')[0].slice(0, 50) || 'Untitled Website';
+      
+      const newWebsite: SavedWebsite = {
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name,
+        description: input,
+        htmlCode,
+        timestamp: Date.now(),
+        industry: industry || undefined,
+      };
+      
+      // Add to beginning of array
+      websites.unshift(newWebsite);
+      
+      // Keep only MAX_WEBSITES
+      if (websites.length > MAX_WEBSITES) {
+        websites.splice(MAX_WEBSITES);
+      }
+      
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(websites));
+    } catch (error) {
+      console.error('Error saving website:', error);
+    }
+  };
 
   const handleGenerate = async () => {
     if (input.length < 50) {
@@ -141,6 +186,10 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
 
       setProgress(100);
       setGeneratedCode(htmlCode);
+      
+      // Save to localStorage
+      saveWebsite(htmlCode);
+      
       setIsGenerating(false);
 
       toast({
@@ -269,9 +318,19 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
       {/* Navigation */}
       <nav className="glass-nav fixed top-0 left-0 right-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" />
-            <span className="text-xl font-bold tracking-tight">Sento</span>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-primary" />
+              <span className="text-xl font-bold tracking-tight">Sento</span>
+            </div>
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/my-websites')}
+              className="flex items-center gap-2"
+            >
+              <FolderOpen className="w-4 h-4" />
+              My Websites
+            </Button>
           </div>
           <div className="glass-card px-4 py-2 flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center text-white text-sm font-semibold">
