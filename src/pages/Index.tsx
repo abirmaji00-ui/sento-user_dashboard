@@ -18,8 +18,17 @@ import {
   Maximize2,
   PartyPopper,
   User,
+  Share2,
+  Play,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ViewMode = "desktop" | "tablet" | "mobile";
 
@@ -30,6 +39,7 @@ const Index = () => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("desktop");
+  const [industry, setIndustry] = useState("");
   const { toast } = useToast();
 
   const statuses = [
@@ -185,6 +195,24 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
     setInput("");
     setProgress(0);
     setStatus("");
+    setIndustry("");
+  };
+
+  const handleShare = async () => {
+    if (!generatedCode) return;
+    
+    const shareUrl = window.location.href;
+    await navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Link Copied!",
+      description: "Share this link with others",
+    });
+  };
+
+  const handleExampleClick = (exampleText: string, exampleIndustry: string) => {
+    setInput(exampleText);
+    setIndustry(exampleIndustry);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const getAspectRatio = () => {
@@ -207,13 +235,42 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
       ? "text-yellow-500"
       : "text-gray-500";
 
+  const examples = [
+    {
+      title: "Restaurant Website",
+      description: "Modern dining experience",
+      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
+      prompt: "Create a modern restaurant website with a hero section featuring our signature dish, an elegant menu grid with food categories, an about section highlighting our chef's story, and a reservation form. Use warm earthy tones with gold accents. Include a photo gallery and customer testimonials.",
+      industry: "restaurant"
+    },
+    {
+      title: "Portfolio Website",
+      description: "Showcase your creative work",
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop",
+      prompt: "Design a creative portfolio website with a striking hero section, a masonry-style project gallery, detailed case studies section, skills showcase with progress bars, and a contact form. Use a minimalist black and white design with electric blue accents. Include smooth scroll animations.",
+      industry: "portfolio"
+    },
+    {
+      title: "Coaching Website",
+      description: "Inspire and transform lives",
+      image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop",
+      prompt: "Build a life coaching website with an inspiring hero section, services offered with pricing cards, client success stories with before/after transformations, a booking calendar section, and a blog preview. Use calming blues and greens with energetic orange CTAs. Add video testimonial placeholders.",
+      industry: "coaching"
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Animated Background Gradient */}
+      <div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-background to-indigo-900/20 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-600/10 via-transparent to-transparent animate-pulse"></div>
+      </div>
+
       {/* Navigation */}
       <nav className="glass-nav fixed top-0 left-0 right-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-purple-500" />
+            <Sparkles className="w-6 h-6 text-primary" />
             <span className="text-xl font-bold tracking-tight">Sento</span>
           </div>
           <div className="glass-card px-4 py-2 flex items-center gap-3">
@@ -224,7 +281,7 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
               <div className="font-medium">Free Plan</div>
               <div className="text-xs text-muted-foreground">
                 Credits: 1/1{" "}
-                <a href="#" className="text-purple-400 hover:underline">
+                <a href="#" className="text-primary hover:underline">
                   Upgrade
                 </a>
               </div>
@@ -234,64 +291,158 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
       </nav>
 
       {/* Main Content */}
-      <main className="pt-24 pb-12 px-6">
+      <main className="relative pt-24 pb-12 px-6">
         <div className="max-w-5xl mx-auto">
           {!generatedCode && !isGenerating && (
             <>
               {/* Hero Section */}
-              <div className="text-center mb-12 space-y-6">
-                <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
-                  Create Stunning Websites{" "}
-                  <span className="gradient-text">with AI</span>
-                </h1>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                  Describe your vision. Watch AI build it in seconds.
-                </p>
-                <div className="inline-flex items-center gap-2 glass-card rounded-full px-4 py-1.5 text-sm">
-                  <Sparkles className="w-4 h-4 text-purple-400" />
-                  <span className="text-muted-foreground">
-                    Powered by Claude Sonnet 4
+              <div className="text-center mb-16 space-y-8">
+                <div className="space-y-6">
+                  <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-tight">
+                    Create Stunning Websites{" "}
+                    <span className="gradient-text animate-glow">with AI</span>
+                  </h1>
+                  <p className="text-2xl md:text-3xl text-muted-foreground max-w-3xl mx-auto font-light">
+                    Describe your vision. Watch AI build it in seconds.
+                  </p>
+                </div>
+
+                {/* Demo Video Placeholder */}
+                <div className="max-w-4xl mx-auto mt-12">
+                  <div className="glass-card rounded-2xl p-2 shadow-glow">
+                    <div className="relative aspect-video bg-gradient-to-br from-purple-900/40 to-indigo-900/40 rounded-xl flex items-center justify-center overflow-hidden">
+                      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1547658719-da2b51169166?w=1200&h=675&fit=crop')] bg-cover bg-center opacity-30"></div>
+                      <div className="relative z-10 text-center space-y-4">
+                        <div className="w-20 h-20 mx-auto rounded-full bg-gradient-primary flex items-center justify-center shadow-glow hover-scale cursor-pointer">
+                          <Play className="w-8 h-8 text-white ml-1" />
+                        </div>
+                        <p className="text-lg font-medium">Watch How It Works</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="inline-flex items-center gap-2 glass-card rounded-full px-6 py-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <span className="text-muted-foreground font-medium">
+                    Powered by Groq & Llama 3.3
                   </span>
                 </div>
               </div>
 
               {/* Input Card */}
-              <div className="glass-card rounded-2xl p-8 shadow-card animate-slide-up">
-                <div className="flex items-center gap-2 mb-3">
-                  <MessageSquare className="w-5 h-5 text-muted-foreground" />
-                  <label className="text-sm font-medium">
-                    Describe Your Website
+              <div className="glass-card rounded-2xl p-8 shadow-card animate-slide-up space-y-6">
+                {/* Industry Selector */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Industry Type
                   </label>
+                  <Select value={industry} onValueChange={setIndustry}>
+                    <SelectTrigger className="w-full bg-black/40 border-white/20">
+                      <SelectValue placeholder="Select your industry..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="restaurant">Restaurant</SelectItem>
+                      <SelectItem value="portfolio">Portfolio</SelectItem>
+                      <SelectItem value="coaching">Coaching</SelectItem>
+                      <SelectItem value="salon">Salon/Spa</SelectItem>
+                      <SelectItem value="store">Online Store</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <Textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Example: A modern photography portfolio with a hero section, gallery grid, about page, and contact form. Use elegant black and white design with gold accents..."
-                  className="w-full h-48 bg-black/40 border-white/20 rounded-xl p-4 text-foreground placeholder:text-muted font-mono text-sm focus-visible:ring-2 focus-visible:ring-purple-500/50 focus-visible:border-purple-500/50 resize-none"
-                  maxLength={characterLimit + 100}
-                />
+                {/* Description Input */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <MessageSquare className="w-5 h-5 text-muted-foreground" />
+                    <label className="text-sm font-medium">
+                      Describe Your Website
+                    </label>
+                  </div>
 
-                <div className="flex justify-between items-center mt-3">
-                  <span className={`text-xs ${characterCountColor}`}>
-                    {characterCount} / {characterLimit}
-                  </span>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Lightbulb className="w-3 h-3" />
-                    <span>Be specific for best results</span>
+                  <Textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Example: A modern photography portfolio with a hero section showcasing my best work, a filterable gallery grid organized by categories, an about page with my story and approach, and a contact form with availability calendar. Use elegant black and white design with subtle gold accents and smooth animations..."
+                    className="w-full h-56 bg-black/40 border-white/20 rounded-xl p-4 text-foreground placeholder:text-muted-foreground/60 text-sm focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 resize-none"
+                    maxLength={characterLimit + 100}
+                  />
+
+                  <div className="flex justify-between items-center mt-3">
+                    <span className={`text-sm font-medium ${characterCountColor}`}>
+                      {characterCount} / {characterLimit}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quick Tips Section */}
+                <div className="glass-card rounded-xl p-4 bg-primary/5 border-primary/20">
+                  <div className="flex items-start gap-3">
+                    <Lightbulb className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-sm">Quick Tips for Best Results:</h3>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        <li>• Be specific about your business type and target audience</li>
+                        <li>• Mention colors and visual style you prefer</li>
+                        <li>• Include key features and sections you need</li>
+                        <li>• Describe the mood or feeling you want to convey</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
 
                 <Button
                   onClick={handleGenerate}
                   disabled={input.length < 50}
-                  className="w-full mt-6 h-14 text-base font-semibold gradient-button hover-scale shadow-glow rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-16 text-lg font-bold gradient-button hover-scale shadow-glow rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  <Zap className="w-5 h-5 mr-2" />
+                  <Zap className="w-6 h-6 mr-2" />
                   {input.length < 50
-                    ? "Describe your website first"
+                    ? "Describe your website first (min 50 characters)"
                     : "Generate Website ✨"}
                 </Button>
+              </div>
+
+              {/* Examples Section */}
+              <div className="mt-20 space-y-8">
+                <div className="text-center space-y-3">
+                  <h2 className="text-3xl md:text-4xl font-bold">
+                    Get Inspired by <span className="gradient-text">Examples</span>
+                  </h2>
+                  <p className="text-muted-foreground text-lg">
+                    Click any example to use its prompt
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                  {examples.map((example, index) => (
+                    <div
+                      key={index}
+                      onClick={() => handleExampleClick(example.prompt, example.industry)}
+                      className="glass-card rounded-xl overflow-hidden hover-scale cursor-pointer group"
+                    >
+                      <div className="aspect-video relative overflow-hidden">
+                        <img
+                          src={example.image}
+                          alt={example.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4">
+                          <div>
+                            <h3 className="font-bold text-lg">{example.title}</h3>
+                            <p className="text-sm text-muted-foreground">{example.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-primary/5 border-t border-primary/10">
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {example.prompt}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
@@ -299,82 +450,107 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
           {/* Loading State */}
           {isGenerating && (
             <div className="glass-card rounded-2xl p-12 shadow-card text-center animate-slide-up">
-              <Loader2 className="w-12 h-12 text-purple-500 mx-auto animate-spin" />
-              <h2 className="text-2xl font-bold mt-6">Creating Your Website</h2>
-              <p className="text-muted-foreground text-sm mt-2">{status}</p>
+              <Loader2 className="w-16 h-16 text-primary mx-auto animate-spin" />
+              <h2 className="text-3xl font-bold mt-6">Creating Your Website</h2>
+              <p className="text-muted-foreground text-lg mt-3">{status}</p>
 
-              <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden mt-8">
-                <div
-                  className="h-full gradient-button transition-all duration-500 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
+              <div className="mt-8 space-y-3">
+                <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full gradient-button transition-all duration-500 ease-out shadow-glow"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground font-medium">{progress}% Complete</span>
+                  <span className="text-primary font-semibold">
+                    ~{Math.max(0, 30 - Math.floor((progress / 100) * 30))} seconds remaining
+                  </span>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                ~{Math.max(0, 30 - Math.floor((progress / 100) * 30))} seconds
-                remaining
-              </p>
             </div>
           )}
 
           {/* Preview Section */}
           {generatedCode && (
-            <div className="space-y-6 animate-slide-up">
+            <div className="space-y-8 animate-slide-up">
               {/* Success Header */}
               <div className="flex items-center justify-center gap-3">
-                <PartyPopper className="w-8 h-8 text-purple-500 animate-bounce" />
-                <h2 className="text-3xl font-bold">Your Website is Ready!</h2>
+                <PartyPopper className="w-10 h-10 text-primary animate-bounce" />
+                <h2 className="text-4xl font-bold">Your Website is Ready!</h2>
               </div>
 
               {/* Preview Card */}
               <div className="glass-card rounded-2xl overflow-hidden shadow-card">
                 {/* Toolbar */}
-                <div className="bg-black/40 border-b border-white/10 px-4 py-3 flex items-center justify-between">
+                <div className="bg-black/40 border-b border-white/10 px-6 py-4 flex items-center justify-between">
                   <div className="flex gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setViewMode("desktop")}
-                      className={`${
+                      className={`gap-2 ${
                         viewMode === "desktop"
-                          ? "bg-white/10 text-foreground"
-                          : "text-muted-foreground"
+                          ? "bg-primary/20 text-primary border border-primary/30"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       <Monitor className="w-4 h-4" />
+                      <span className="hidden sm:inline">Desktop</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setViewMode("tablet")}
-                      className={`${
+                      className={`gap-2 ${
                         viewMode === "tablet"
-                          ? "bg-white/10 text-foreground"
-                          : "text-muted-foreground"
+                          ? "bg-primary/20 text-primary border border-primary/30"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       <Tablet className="w-4 h-4" />
+                      <span className="hidden sm:inline">Tablet</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setViewMode("mobile")}
-                      className={`${
+                      className={`gap-2 ${
                         viewMode === "mobile"
-                          ? "bg-white/10 text-foreground"
-                          : "text-muted-foreground"
+                          ? "bg-primary/20 text-primary border border-primary/30"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       <Smartphone className="w-4 h-4" />
+                      <span className="hidden sm:inline">Mobile</span>
                     </Button>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" disabled className="text-muted-foreground">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      disabled 
+                      className="text-muted-foreground"
+                      title="Zoom out (coming soon)"
+                    >
                       <ZoomOut className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" disabled className="text-muted-foreground">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      disabled 
+                      className="text-muted-foreground"
+                      title="Fullscreen (coming soon)"
+                    >
                       <Maximize2 className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" disabled className="text-muted-foreground">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      disabled 
+                      className="text-muted-foreground"
+                      title="Zoom in (coming soon)"
+                    >
                       <ZoomIn className="w-4 h-4" />
                     </Button>
                   </div>
@@ -394,29 +570,37 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="grid sm:grid-cols-4 gap-4">
                 <Button
                   onClick={handleDownload}
-                  className="flex-1 h-12 gradient-button hover-scale shadow-glow"
+                  className="h-14 text-base font-semibold gradient-button hover-scale shadow-glow"
                 >
                   <Download className="w-5 h-5 mr-2" />
-                  Download HTML
+                  Download
                 </Button>
                 <Button
                   onClick={handleCopy}
                   variant="outline"
-                  className="flex-1 h-12 border-white/20 bg-white/5 hover:bg-white/10"
+                  className="h-14 text-base font-semibold border-white/20 bg-white/5 hover:bg-white/10"
                 >
                   <Copy className="w-5 h-5 mr-2" />
                   Copy Code
                 </Button>
                 <Button
+                  onClick={handleShare}
+                  variant="outline"
+                  className="h-14 text-base font-semibold border-white/20 bg-white/5 hover:bg-white/10"
+                >
+                  <Share2 className="w-5 h-5 mr-2" />
+                  Share
+                </Button>
+                <Button
                   onClick={handleNewWebsite}
                   variant="ghost"
-                  className="h-12 text-muted-foreground hover:text-foreground"
+                  className="h-14 text-base font-semibold text-muted-foreground hover:text-foreground"
                 >
                   <Plus className="w-5 h-5 mr-2" />
-                  Generate Another
+                  New
                 </Button>
               </div>
             </div>
