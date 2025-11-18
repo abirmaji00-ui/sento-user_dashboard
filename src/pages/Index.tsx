@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   Lock,
   Unlock,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -63,6 +64,9 @@ const Index = () => {
   const [status, setStatus] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("desktop");
   const [industry, setIndustry] = useState("custom");
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
 
   // Load from navigation state if regenerating
@@ -85,12 +89,26 @@ const Index = () => {
     }
   };
 
-  const statuses = [
-    "🤖 Analyzing your requirements...",
-    "🎨 Generating HTML structure...",
-    "✨ Adding styles and animations...",
-    "🚀 Finalizing your website...",
-  ];
+  // Elapsed time counter
+  useEffect(() => {
+    if (isGenerating) {
+      const startTime = Date.now();
+      const timer = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+      return () => clearInterval(timer);
+    } else {
+      setElapsedTime(0);
+    }
+  }, [isGenerating]);
+
+  const getStatusForProgress = (progress: number): string => {
+    if (progress < 20) return "🤖 AI analyzing your requirements...";
+    if (progress < 40) return "🎨 Designing perfect layout structure...";
+    if (progress < 60) return "✨ Crafting beautiful visual elements...";
+    if (progress < 80) return "📱 Optimizing for all devices...";
+    return "🚀 Finalizing your professional website...";
+  };
 
   const saveWebsite = (htmlCode: string) => {
     try {
@@ -135,18 +153,18 @@ const Index = () => {
     setIsGenerating(true);
     setProgress(0);
     setGeneratedCode(null);
+    setShowSuccess(false);
+    
+    // Create abort controller
+    abortControllerRef.current = new AbortController();
 
-    let statusIndex = 0;
-    setStatus(statuses[0]);
-
-    const statusInterval = setInterval(() => {
-      statusIndex = (statusIndex + 1) % statuses.length;
-      setStatus(statuses[statusIndex]);
-    }, 3000);
-
+    // Smooth progress animation
     const progressInterval = setInterval(() => {
-      setProgress((p) => Math.min(p + 2, 95));
-    }, 600);
+      setProgress((p) => {
+        const newProgress = Math.min(p + 0.5, 95);
+        return newProgress;
+      });
+    }, 150);
 
     try {
       const prompt = `Generate a complete, production-ready, single-file HTML website based on this description:
@@ -188,10 +206,10 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
           ],
           temperature: 0.7,
           max_tokens: 4000
-        })
+        }),
+        signal: abortControllerRef.current.signal
       });
 
-      clearInterval(statusInterval);
       clearInterval(progressInterval);
 
       if (!response.ok) {
@@ -212,31 +230,51 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
         throw new Error('Invalid HTML generated');
       }
 
+      // Show 100% progress
       setProgress(100);
-      setGeneratedCode(htmlCode);
+      setStatus("✅ Your website is ready!");
       
-      // Save to localStorage
-      saveWebsite(htmlCode);
+      // Show success state for 2 seconds
+      setShowSuccess(true);
       
-      setIsGenerating(false);
-
-      toast({
-        title: "Success! 🎉",
-        description: "Your website has been generated successfully",
-      });
+      setTimeout(() => {
+        setGeneratedCode(htmlCode);
+        saveWebsite(htmlCode);
+        setIsGenerating(false);
+        setShowSuccess(false);
+        
+        toast({
+          title: "Success! 🎉",
+          description: "Your website has been generated successfully",
+        });
+      }, 2000);
+      
     } catch (error) {
-      clearInterval(statusInterval);
       clearInterval(progressInterval);
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        toast({
+          title: "Generation cancelled",
+          description: "Website generation was cancelled",
+        });
+      } else {
+        console.error('Generation error:', error);
+        toast({
+          title: "Generation failed",
+          description: error instanceof Error ? error.message : "Please try again.",
+          variant: "destructive",
+        });
+      }
+      
       setIsGenerating(false);
       setProgress(0);
+      setShowSuccess(false);
+    }
+  };
 
-      console.error('Generation error:', error);
-
-      toast({
-        title: "Generation failed",
-        description: error instanceof Error ? error.message : "Please try again.",
-        variant: "destructive",
-      });
+  const handleCancelGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
   };
 
@@ -600,22 +638,55 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
 
           {/* Loading State */}
           {isGenerating && (
-            <div className="glass-card rounded-2xl p-12 shadow-card text-center animate-slide-up">
-              <Loader2 className="w-16 h-16 text-primary mx-auto animate-spin" />
-              <h2 className="text-3xl font-bold mt-6">Creating Your Website</h2>
-              <p className="text-muted-foreground text-lg mt-3">{status}</p>
+            <div className="glass-card rounded-2xl p-12 shadow-card text-center animate-slide-up relative">
+              {/* Cancel Button */}
+              <Button
+                onClick={handleCancelGeneration}
+                variant="ghost"
+                size="sm"
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+
+              {/* Time Indicator */}
+              <div className="text-sm text-muted-foreground mb-6">
+                ⏱️ Estimated time: 20-30 seconds
+              </div>
+
+              {showSuccess ? (
+                <>
+                  <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto animate-scale-in" />
+                  <h2 className="text-3xl font-bold mt-6 text-green-500">✅ Your website is ready!</h2>
+                </>
+              ) : (
+                <>
+                  <Loader2 className="w-16 h-16 text-primary mx-auto animate-spin" />
+                  <h2 className="text-3xl font-bold mt-6">Creating Your Website</h2>
+                  <p className="text-muted-foreground text-lg mt-3">{getStatusForProgress(progress)}</p>
+                </>
+              )}
 
               <div className="mt-8 space-y-3">
-                <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden">
+                {/* Gradient Progress Bar */}
+                <div className="w-full h-4 bg-white/5 rounded-full overflow-hidden">
                   <div
-                    className="h-full gradient-button transition-all duration-500 ease-out shadow-glow"
-                    style={{ width: `${progress}%` }}
+                    className="h-full transition-all duration-500 ease-out rounded-full"
+                    style={{
+                      width: `${progress}%`,
+                      background: progress < 40 
+                        ? 'linear-gradient(90deg, #3b82f6, #6366f1)'
+                        : progress < 80 
+                        ? 'linear-gradient(90deg, #6366f1, #8b5cf6)'
+                        : 'linear-gradient(90deg, #8b5cf6, #10b981)'
+                    }}
                   />
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground font-medium">{progress}% Complete</span>
+                  <span className="text-muted-foreground font-medium">{Math.floor(progress)}% Complete</span>
                   <span className="text-primary font-semibold">
-                    ~{Math.max(0, 30 - Math.floor((progress / 100) * 30))} seconds remaining
+                    Elapsed: {elapsedTime}s
                   </span>
                 </div>
               </div>
