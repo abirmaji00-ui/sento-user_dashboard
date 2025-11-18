@@ -33,6 +33,20 @@ import {
 } from "@/components/ui/select";
 import { SavedWebsite, STORAGE_KEY, MAX_WEBSITES } from "@/types/website";
 
+const INDUSTRY_TEMPLATES: Record<string, string> = {
+  restaurant: "Professional restaurant website for [YourRestaurantName]. Hero: appetizing food photography from Unsplash. Menu: [8-12] signature dishes with prices and descriptions. About: cuisine story and chef bio. Features: location map, reservation form, gallery, testimonials. Colors: warm orange/red/brown palette. Mobile-optimized.",
+  
+  portfolio: "Professional [photographer/designer/developer] portfolio for [YourName]. Hero: striking headshot with bold tagline. Projects: [6-9] works with hover overlays. About: background, skills, process. Services: offerings with pricing. Testimonials: 3 client quotes. Contact: form with social links. Colors: [choose color]. Clean, minimal aesthetic.",
+  
+  coaching: "Authority coaching website for [YourName/Business]. Hero: transformation-focused headline with CTA. Programs: [3-4] offerings with outcomes and pricing. About: credentials, story, methodology. Proof: client results and testimonials. Lead magnet: free guide download. Booking: calendar integration placeholder. Colors: trust-building blue/green. Conversion-optimized.",
+  
+  salon: "Elegant salon website for [YourSalonName]. Hero: stunning before/after slider. Services: complete menu with durations and prices. Team: stylist profiles with specialties. Gallery: [12+] transformation photos. Booking: appointment form. Reviews: Google reviews showcase. Info: location, hours, policies. Colors: luxe pink/purple/rose-gold. Premium feel.",
+  
+  ecommerce: "Modern online store for [YourBrandName]. Hero: featured products with lifestyle shots. Shop: [12-16] product cards with images, prices, quick-add. Categories: intuitive navigation. Brand: story and values. Policies: shipping, returns, guarantees. CTA: WhatsApp instant checkout button. Colors: vibrant, energetic. Conversion-focused.",
+  
+  custom: "",
+};
+
 type ViewMode = "desktop" | "tablet" | "mobile";
 
 const Index = () => {
@@ -44,7 +58,7 @@ const Index = () => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("desktop");
-  const [industry, setIndustry] = useState("");
+  const [industry, setIndustry] = useState("custom");
   const { toast } = useToast();
 
   // Load from navigation state if regenerating
@@ -56,6 +70,16 @@ const Index = () => {
       }
     }
   }, [location.state]);
+
+  // Auto-fill textarea when industry changes
+  const handleIndustryChange = (value: string) => {
+    setIndustry(value);
+    if (value !== "custom" && INDUSTRY_TEMPLATES[value]) {
+      setInput(INDUSTRY_TEMPLATES[value]);
+    } else if (value === "custom") {
+      setInput("");
+    }
+  };
 
   const statuses = [
     "🤖 Analyzing your requirements...",
@@ -244,7 +268,7 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
     setInput("");
     setProgress(0);
     setStatus("");
-    setIndustry("");
+    setIndustry("custom");
   };
 
   const handleShare = async () => {
@@ -394,9 +418,9 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
                 {/* Industry Selector */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Industry Type
+                    Choose Your Industry
                   </label>
-                  <Select value={industry} onValueChange={setIndustry}>
+                  <Select value={industry} onValueChange={handleIndustryChange}>
                     <SelectTrigger className="w-full bg-black/40 border-white/20">
                       <SelectValue placeholder="Select your industry..." />
                     </SelectTrigger>
@@ -405,8 +429,8 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
                       <SelectItem value="portfolio">Portfolio</SelectItem>
                       <SelectItem value="coaching">Coaching</SelectItem>
                       <SelectItem value="salon">Salon/Spa</SelectItem>
-                      <SelectItem value="store">Online Store</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="ecommerce">E-commerce</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -423,7 +447,11 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
                   <Textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Example: A modern photography portfolio with a hero section showcasing my best work, a filterable gallery grid organized by categories, an about page with my story and approach, and a contact form with availability calendar. Use elegant black and white design with subtle gold accents and smooth animations..."
+                    placeholder={
+                      industry === "custom"
+                        ? "Describe your dream website in detail..."
+                        : "Edit the template above or describe your dream website in detail..."
+                    }
                     className="w-full h-56 bg-black/40 border-white/20 rounded-xl p-4 text-foreground placeholder:text-muted-foreground/60 text-sm focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 resize-none"
                     maxLength={characterLimit + 100}
                   />
