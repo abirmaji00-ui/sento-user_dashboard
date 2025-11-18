@@ -22,6 +22,10 @@ import {
   Share2,
   Play,
   FolderOpen,
+  AlertCircle,
+  CheckCircle2,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -456,38 +460,98 @@ Return ONLY the complete HTML code. No explanations, no markdown, no code blocks
                     maxLength={characterLimit + 100}
                   />
 
-                  <div className="flex justify-between items-center mt-3">
-                    <span className={`text-sm font-medium ${characterCountColor}`}>
-                      {characterCount} / {characterLimit}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Quick Tips Section */}
-                <div className="glass-card rounded-xl p-4 bg-primary/5 border-primary/20">
-                  <div className="flex items-start gap-3">
-                    <Lightbulb className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-sm">Quick Tips for Best Results:</h3>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        <li>• Be specific about your business type and target audience</li>
-                        <li>• Mention colors and visual style you prefer</li>
-                        <li>• Include key features and sections you need</li>
-                        <li>• Describe the mood or feeling you want to convey</li>
-                      </ul>
+                  {/* Dynamic Character Counter with Validation Feedback */}
+                  <div className="mt-3 space-y-2">
+                    {/* Empty State Helper */}
+                    {characterCount === 0 && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
+                        <Lightbulb className="w-4 h-4" />
+                        <span>Not sure what to write? Pick an industry template above!</span>
+                      </div>
+                    )}
+                    
+                    {/* Character Count with Status */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {characterCount < 50 && characterCount > 0 && (
+                          <>
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                            <span className="text-sm font-medium text-red-500">
+                              Add more detail for better results
+                            </span>
+                          </>
+                        )}
+                        {characterCount >= 50 && characterCount <= characterLimit && (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            <span className="text-sm font-medium text-green-500">
+                              Perfect amount of detail!
+                            </span>
+                          </>
+                        )}
+                        {characterCount > characterLimit && (
+                          <>
+                            <AlertCircle className="w-4 h-4 text-orange-500" />
+                            <span className="text-sm font-medium text-orange-500">
+                              Too long - AI works best under 1000
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <span className={`text-sm font-medium ${characterCountColor}`}>
+                        {characterCount} / {characterLimit}
+                      </span>
                     </div>
                   </div>
                 </div>
 
+                {/* Pro Tips Panel */}
+                <div className="glass-card rounded-xl p-5 bg-primary/5 border-primary/20">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                        <Lightbulb className="w-4 h-4 text-primary" />
+                      </div>
+                      <h3 className="font-bold text-base">💡 Pro Tips for Amazing Websites:</h3>
+                    </div>
+                    <div className="grid gap-2 ml-10">
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <span className="text-green-500 font-bold">✓</span>
+                        <span>Include your business name and type</span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <span className="text-green-500 font-bold">✓</span>
+                        <span>Specify 2-3 color preferences</span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <span className="text-green-500 font-bold">✓</span>
+                        <span>List must-have features (menu, gallery, contact, etc.)</span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <span className="text-green-500 font-bold">✓</span>
+                        <span>Mention your target audience if relevant</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Smart Generate Button */}
                 <Button
                   onClick={handleGenerate}
                   disabled={input.length < 50}
-                  className="w-full h-16 text-lg font-bold gradient-button hover-scale shadow-glow rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="w-full h-16 text-lg font-bold gradient-button hover-scale shadow-glow rounded-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all group"
                 >
-                  <Zap className="w-6 h-6 mr-2" />
-                  {input.length < 50
-                    ? "Describe your website first (min 50 characters)"
-                    : "Generate Website ✨"}
+                  {input.length < 50 ? (
+                    <>
+                      <Lock className="w-6 h-6 mr-2" />
+                      Need at least 50 characters to generate
+                    </>
+                  ) : (
+                    <>
+                      <Unlock className="w-6 h-6 mr-2 group-hover:rotate-12 transition-transform" />
+                      Generate Website ✨
+                    </>
+                  )}
                 </Button>
               </div>
 
