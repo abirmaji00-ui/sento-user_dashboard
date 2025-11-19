@@ -3,12 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Download, ExternalLink, Trash2, RefreshCw, Sparkles } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Download, ExternalLink, Trash2, RefreshCw, Sparkles, X, Monitor, Tablet, Smartphone, Copy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { SavedWebsite, STORAGE_KEY, MAX_WEBSITES } from "@/types/website";
 
+type ViewMode = "desktop" | "tablet" | "mobile";
+
 const MyWebsites = () => {
   const [websites, setWebsites] = useState<SavedWebsite[]>([]);
+  const [previewWebsite, setPreviewWebsite] = useState<SavedWebsite | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("desktop");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,10 +54,40 @@ const MyWebsites = () => {
     });
   };
 
-  const previewWebsite = (website: SavedWebsite) => {
-    const blob = new Blob([website.htmlCode], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+  const openPreview = (website: SavedWebsite) => {
+    setPreviewWebsite(website);
+    setViewMode("desktop");
+  };
+
+  const closePreview = () => {
+    setPreviewWebsite(null);
+  };
+
+  const handleCopyCode = async () => {
+    if (!previewWebsite) return;
+    
+    await navigator.clipboard.writeText(previewWebsite.htmlCode);
+    toast({
+      title: "Copied!",
+      description: "HTML code copied to clipboard",
+    });
+  };
+
+  const handleDeleteFromPreview = () => {
+    if (!previewWebsite) return;
+    deleteWebsite(previewWebsite.id);
+    closePreview();
+  };
+
+  const getIframeWidth = () => {
+    switch (viewMode) {
+      case "tablet":
+        return "768px";
+      case "mobile":
+        return "375px";
+      default:
+        return "100%";
+    }
   };
 
   const deleteWebsite = (id: string) => {
@@ -179,9 +214,9 @@ const MyWebsites = () => {
                     {website.description}
                   </p>
                 </CardContent>
-                <CardFooter className="flex flex-wrap gap-2">
+                 <CardFooter className="flex flex-wrap gap-2">
                   <Button 
-                    onClick={() => previewWebsite(website)} 
+                    onClick={() => openPreview(website)} 
                     variant="outline" 
                     size="sm"
                     className="flex-1"
@@ -232,6 +267,122 @@ const MyWebsites = () => {
           </div>
         )}
       </div>
+
+      {/* Preview Modal */}
+      <Dialog open={!!previewWebsite} onOpenChange={(open) => !open && closePreview()}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] h-[95vh] p-0 gap-0">
+          <div className="flex flex-col h-full">
+            {/* Top Bar */}
+            <div className="flex items-center justify-between px-6 py-4 border-b bg-card">
+              <h2 className="text-lg font-semibold truncate flex-1 mr-4">
+                {previewWebsite?.name}
+              </h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={closePreview}
+                className="shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Device Tabs */}
+            <div className="flex items-center gap-2 px-6 py-3 border-b bg-muted/30">
+              <Button
+                variant={viewMode === "desktop" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("desktop")}
+                className="gap-2"
+              >
+                <Monitor className="h-4 w-4" />
+                Desktop
+              </Button>
+              <Button
+                variant={viewMode === "tablet" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("tablet")}
+                className="gap-2"
+              >
+                <Tablet className="h-4 w-4" />
+                Tablet
+              </Button>
+              <Button
+                variant={viewMode === "mobile" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("mobile")}
+                className="gap-2"
+              >
+                <Smartphone className="h-4 w-4" />
+                Mobile
+              </Button>
+            </div>
+
+            {/* Preview Area */}
+            <div className="flex-1 p-6 bg-muted/20 overflow-auto">
+              <div className="h-full flex items-center justify-center">
+                <div
+                  className="bg-white shadow-2xl rounded-lg overflow-hidden transition-all duration-300"
+                  style={{
+                    width: getIframeWidth(),
+                    height: "100%",
+                    maxWidth: "100%",
+                  }}
+                >
+                  {previewWebsite && (
+                    <iframe
+                      srcDoc={previewWebsite.htmlCode}
+                      className="w-full h-full border-0"
+                      title="Website Preview"
+                      sandbox="allow-scripts allow-same-origin"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="flex items-center justify-center gap-3 px-6 py-4 border-t bg-card">
+              <Button
+                onClick={() => previewWebsite && downloadWebsite(previewWebsite)}
+                variant="outline"
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Download HTML
+              </Button>
+              <Button
+                onClick={handleCopyCode}
+                variant="outline"
+                className="gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                Copy Code
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="gap-2">
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Website?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete "{previewWebsite?.name}". This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteFromPreview}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
